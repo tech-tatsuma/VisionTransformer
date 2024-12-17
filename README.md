@@ -52,18 +52,18 @@ python -m mnist.train
 ```
 
 ### Attention mapの可視化のためのパラメータの決定術
-- $embed_dim$: アテンション埋め込み次元（推奨値: 768, 512, 1024）
-- $hidden_dim$: フィードフォワード層の隠れ次元(通常4*embed_dim)
-- $num_heads$: アテンションヘッド数(embed_dim % num_heads == 0)
-- $num_layers$: トランスフォーマーブロックの数（一般的には6~12）
-- $num_classes$: 出力クラス数
-- $dropout$: ドロップアウト率(推奨値: 0.1~0.3)
-- $num_channels$: 入力画像のチャンネル数(1: グレースケール, 3: RGB)
-- $patch_size$: パッチの１辺のピクセル数（推奨値: 16, 32）
-- $num_patches$: パッチの合計数(計算式: $(H/patch_size)×(W/patch_size)$)
+- `embed_dim`: アテンション埋め込み次元（推奨値: 768, 512, 1024）
+- `hidden_dim`: フィードフォワード層の隠れ次元(通常4*embed_dim)
+- `num_heads`: アテンションヘッド数(embed_dim % num_heads == 0)
+- `num_layers`: トランスフォーマーブロックの数（一般的には6~12）
+- `num_classes`: 出力クラス数
+- `dropout`: ドロップアウト率(推奨値: 0.1~0.3)
+- `num_channels`: 入力画像のチャンネル数(1: グレースケール, 3: RGB)
+- `patch_size`: パッチの１辺のピクセル数（推奨値: 16, 32）
+- `num_patches`: パッチの合計数(計算式: `(H/patch_size)×(W/patch_size)`)
 ### アテンション関連のチェックリスト
-- $embed_dim % num_heads == 0$: head_dimが整数であるか確認
-- $embed_dim % (3*num_heads) == 0$: qkv出力形状が割り切れるか確認
+- `embed_dim % num_heads == 0`: head_dimが整数であるか確認
+- `embed_dim % (3*num_heads) == 0`: qkv出力形状が割り切れるか確認
 ### Attention mapの可視化
 1. `vis_attn.py`を編集
 ```
