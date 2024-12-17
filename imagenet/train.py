@@ -11,6 +11,7 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 from models.vit import VisionTransformer
 from imagenet.dataloaders.dataset import ImageNetDataset
+from imagenet.lamb import Lamb
 
 import sys
 
@@ -29,11 +30,10 @@ def train(learning_rate):
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    epochs = 30
+    epochs = 300
     learning_rate = learning_rate
     output_root_dir = "imagenet_output"
     output_dir = os.path.join(output_root_dir, f"lr_{learning_rate}")
-
 
     # PyTorchの変換定義
     transform = transforms.Compose([
@@ -43,31 +43,35 @@ def train(learning_rate):
     ])
 
     train_dataset = ImageNetDataset(split="train", transform=transform)
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True, num_workers=4)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=4096, shuffle=True, num_workers=2, pin_memory=True)
 
     val_dataset = ImageNetDataset(split="validation", transform=transform)
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=128, shuffle=False, num_workers=4)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=4096, shuffle=False, num_workers=2, pin_memory=True)
 
     test_dataset = ImageNetDataset(split="test", transform=transform)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=4)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=4096, shuffle=False, num_workers=2, pin_memory=True)
 
     model = VisionTransformer(embed_dim=768,
                           hidden_dim=768*4,
-                          num_heads=12,
+                          num_heads=8,
                           num_layers=12,
                           patch_size=16,
                           num_channels=3,
                           num_patches=196,
                           num_classes=1000,
-                          dropout=0.2)
+                          dropout=0.1)
 
     model.to(device)
 
     loss_fn = torch.nn.CrossEntropyLoss()
-    model_optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    model_optimizer = Lamb(model.parameters(), lr=learning_rate, weight_decay=0.01)
 
-    # set a scheduler to decay the learning rate by 0.1 on the 100th 150th epochs
-    model_scheduler = optim.lr_scheduler.MultiStepLR(model_optimizer,milestones=[100, 150], gamma=0.1)
+    warmup_epochs = 5
+    total_epochs = epochs
+    scheduler = optim.lr_scheduler.LambdaLR(
+        model_optimizer,
+        lr_lambda=lambda epoch: (epoch + 1) / warmup_epochs if epoch < warmup_epochs else 0.5 * (1 + np.cos(np.pi * (epoch - warmup_epochs) / (total_epochs - warmup_epochs)))
+    )
 
     val_loss_min = None
     val_loss_min_epoch = 0
@@ -82,6 +86,7 @@ def train(learning_rate):
 
         # Set model to training mode
         model.train()
+        scaler = torch.cuda.amp.GradScaler()
 
         for imgs, labels in tqdm(train_loader, desc="Training", leave=False):
             imgs, labels = imgs.to(device), labels.to(device)
@@ -89,11 +94,13 @@ def train(learning_rate):
             # zero the parameter gradients
             model_optimizer.zero_grad()
 
-            outputs = model(imgs)
+            with torch.cuda.amp.autocast():
+                outputs = model(imgs)
+                loss = loss_fn(outputs, labels)
 
-            loss = loss_fn(outputs, labels)
-            loss.backward()
-            model_optimizer.step()
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
 
             train_loss += loss.item()
 
@@ -103,7 +110,7 @@ def train(learning_rate):
         train_losses.append(train_loss)
 
         # step the scheduler for the learning rate decay
-        model_scheduler.step()
+        scheduler.step().step()
 
         model.eval()
 

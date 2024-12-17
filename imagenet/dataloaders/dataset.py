@@ -4,7 +4,7 @@ from torchvision import transforms
 from datasets import load_dataset
 
 # データセットのロード
-dataset = load_dataset('trains/datasets_imagenet/imagenet-1k.py', trust_remote_code=True)
+dataset = load_dataset('imagenet/dataloaders/imagenet-1k.py', trust_remote_code=True)
 
 # PyTorchデータセット定義
 class ImageNetDataset(torch.utils.data.Dataset):
