@@ -1,6 +1,7 @@
 import torch
 from torchvision import transforms
 import torch.optim as optim
+from torch import nn
 
 import numpy as np
 import random
@@ -43,13 +44,13 @@ def train(learning_rate):
     ])
 
     train_dataset = ImageNetDataset(split="train", transform=transform)
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=4096, shuffle=True, num_workers=2, pin_memory=True)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=516, shuffle=True, num_workers=2, pin_memory=True)
 
     val_dataset = ImageNetDataset(split="validation", transform=transform)
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=4096, shuffle=False, num_workers=2, pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=516, shuffle=False, num_workers=2, pin_memory=True)
 
     test_dataset = ImageNetDataset(split="test", transform=transform)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=4096, shuffle=False, num_workers=2, pin_memory=True)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=516, shuffle=False, num_workers=2, pin_memory=True)
 
     model = VisionTransformer(embed_dim=768,
                           hidden_dim=768*4,
@@ -60,6 +61,11 @@ def train(learning_rate):
                           num_patches=196,
                           num_classes=1000,
                           dropout=0.1)
+
+    # Parallelize model if multiple GPUs are available
+    if torch.cuda.device_count() > 1:
+        print("Let's use", torch.cuda.device_count(), "GPUs!")
+        model = nn.DataParallel(model)
 
     model.to(device)
 
@@ -99,7 +105,7 @@ def train(learning_rate):
                 loss = loss_fn(outputs, labels)
 
             scaler.scale(loss).backward()
-            scaler.step(optimizer)
+            scaler.step(model_optimizer)
             scaler.update()
 
             train_loss += loss.item()
