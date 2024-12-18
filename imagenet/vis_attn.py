@@ -1,4 +1,5 @@
 import torch
+from torch import nn
 import numpy as np
 from PIL import Image
 from torchvision import transforms
@@ -10,7 +11,7 @@ from models.vit import VisionTransformer
 image_size = 224
 embed_dim=768
 hidden_dim=768*4
-num_heads=12
+num_heads=8
 num_layers=12
 patch_size=16
 num_patches=196
@@ -19,7 +20,7 @@ num_classes=1000
 
 def imgpath2heatmap(img_path, model_path, output_path):
     # Load and preprocess the image
-    img = Image.open(img_path).convert('L')
+    img = Image.open(img_path)
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Resize((image_size, image_size)),
@@ -35,15 +36,20 @@ def imgpath2heatmap(img_path, model_path, output_path):
                           num_patches=num_patches,
                           num_classes=num_classes)
 
+    model = nn.DataParallel(model)
+
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-    model.load_state_dict(torch.load(model_path))
+    model.load_state_dict(torch.load(model_path, weights_only=False))
     img_tensor = img_tensor.squeeze(0).squeeze(0)
 
-    heat_map = img2attentionscores(img_tensor, model, device, image_size, patch_size, num_heads, num_patches)
+    heat_map = img2attentionscores(img_tensor, model.module, device, image_size, patch_size, num_heads, num_patches)
 
     # Convert image and heatmap to numpy arrays
-    img_np = np.asarray(img_tensor.cpu())
+    mean = np.array([0.485, 0.456, 0.406])
+    std = np.array([0.229, 0.224, 0.225])
+    img_np = img_tensor.permute(1, 2, 0).cpu().numpy()
+    img_np = (img_np * std + mean).clip(0, 1)
     heat_map_np = heat_map.detach().cpu().numpy()
 
     # Overlay the heatmap on the original image
@@ -57,7 +63,7 @@ def imgpath2heatmap(img_path, model_path, output_path):
     plt.savefig(output_path)
 
 if __name__=="__main__":
-    image_path = ""
-    model_path = ""
+    image_path = "/home/furuya/VisionTransformer/image copy.png"
+    model_path = "/home/furuya/VisionTransformer/VisionTransformer/imagenet_output/lr_0.0001/best.pt"
     output_path = "output.png"
     imgpath2heatmap(image_path, model_path, output_path)

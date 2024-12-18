@@ -86,7 +86,7 @@ class Lamb(Optimizer):
                 # Paper v3 does not use debiasing.
                 # bias_correction1 = 1 - beta1 ** state['step']
                 # bias_correction2 = 1 - beta2 ** state['step']
-                # 学習りつの適用
+                # 学習率の適用
                 step_size = group['lr'] # * math.sqrt(bias_correction2) / bias_correction1
 
                 weight_norm = p.data.pow(2).sum().sqrt().clamp(0, 10)

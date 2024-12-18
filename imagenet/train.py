@@ -116,7 +116,7 @@ def train(learning_rate):
         train_losses.append(train_loss)
 
         # step the scheduler for the learning rate decay
-        scheduler.step().step()
+        scheduler.step()
 
         model.eval()
 

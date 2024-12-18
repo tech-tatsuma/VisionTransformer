@@ -7,7 +7,7 @@ def img2attentionscores(img_tensor, model, device, image_size, patch_size, num_h
     img = img_tensor.to(device)
 
     # 入力画像をパッチに変換 (1, 1, image_size, image_size) -> (1, num_patches, patch_size*patch_size)
-    patches = img_to_patch(img_tensor.unsqueeze(0).unsqueeze(0), patch_size=patch_size)
+    patches = img_to_patch(img_tensor.unsqueeze(0), patch_size=patch_size)
 
     # パッチを入力層を通して埋め込みベクトルに変換
     patches = model.input_layer(patches.float())
@@ -42,6 +42,6 @@ def img2attentionscores(img_tensor, model, device, image_size, patch_size, num_h
 
     # クラストークンから各パッチへのアテンションスコアを抽出し，元の画像サイズにリサイズ
     attn_heatmap = aug_att_mat[0, 1:].reshape((int(image_size/patch_size), int(image_size/patch_size)))
-    attn_heatmap_resized = F.interpolate(attn_heatmap.unsqueeze(0).unsqueeze(0), [image_size, image_size], mode='bilinear').view(28, 28, 1)
+    attn_heatmap_resized = F.interpolate(attn_heatmap.unsqueeze(0).unsqueeze(0), [image_size, image_size], mode='bilinear').view(image_size, image_size, 1)
 
     return attn_heatmap_resized
