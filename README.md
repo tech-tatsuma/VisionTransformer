@@ -46,20 +46,21 @@ model = VisionTransformer(embed_dim=768,
                           dropout=0.2)
 ```
 ※hidden_dimは，3*num_headsで割り切れるようにする必要がある．
+
 3. 訓練スクリプトの実行
 ```
 python -m mnist.train
 ```
 
 ### Attention mapの可視化のためのパラメータの決定術
-- `embed_dim`: アテンション埋め込み次元（推奨値: 768, 512, 1024）
-- `hidden_dim`: フィードフォワード層の隠れ次元(通常4*embed_dim)
-- `num_heads`: アテンションヘッド数(embed_dim % num_heads == 0)
+- `embed_dim`: アテンション埋め込み次元（推奨値: `768`, `512`, `1024`）
+- `hidden_dim`: フィードフォワード層の隠れ次元(通常`4*embed_dim`)
+- `num_heads`: アテンションヘッド数(`embed_dim % num_heads == 0`)
 - `num_layers`: トランスフォーマーブロックの数（一般的には6~12）
 - `num_classes`: 出力クラス数
 - `dropout`: ドロップアウト率(推奨値: 0.1~0.3)
 - `num_channels`: 入力画像のチャンネル数(1: グレースケール, 3: RGB)
-- `patch_size`: パッチの１辺のピクセル数（推奨値: 16, 32）
+- `patch_size`: パッチの１辺のピクセル数（推奨値: `16`, `32`）
 - `num_patches`: パッチの合計数(計算式: `(H/patch_size)×(W/patch_size)`)
 ### アテンション関連のチェックリスト
 - `embed_dim % num_heads == 0`: head_dimが整数であるか確認
@@ -82,3 +83,4 @@ python -m mnist.vis_attn.py
 ## Reference
 - [An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale](https://arxiv.org/abs/2010.11929)
 - [ImageNet Large Scale Visual Recognition Challenge](https://arxiv.org/abs/1409.0575)
+- [Large Batch Optimization for Deep Learning: Training BERT in 76 minutes](https://arxiv.org/abs/1904.00962)
