@@ -63,7 +63,7 @@ def imgpath2heatmap(img_path, model_path, output_path):
     plt.savefig(output_path)
 
 if __name__=="__main__":
-    image_path = "/home/furuya/VisionTransformer/image copy.png"
+    image_path = "/home/furuya/VisionTransformer/image copy 2.png"
     model_path = "/home/furuya/VisionTransformer/VisionTransformer/imagenet_output/lr_0.0001/best.pt"
     output_path = "output.png"
     imgpath2heatmap(image_path, model_path, output_path)

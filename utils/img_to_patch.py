@@ -6,7 +6,6 @@ def img_to_patch(x, patch_size, flatten_channels=True):
         flatten_channels - If True, the patches will be returned in a flattened format
                            as a feature vector instead of a image grid.
     """
-    print(x.shape)
     B, C, H, W = x.shape
     x = x.reshape(B, C, H // patch_size, patch_size, W // patch_size, patch_size)
     x = x.permute(0, 2, 4, 1, 3, 5)  # [B, H', W', C, p_H, p_W]

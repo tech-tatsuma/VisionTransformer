@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
 from utils.img_to_patch import img_to_patch
+import matplotlib.pyplot as plt
 
 def img2attentionscores(img_tensor, model, device, image_size, patch_size, num_heads, num_patches):
     # 画像テンソルをGPUに転送
@@ -27,10 +28,12 @@ def img2attentionscores(img_tensor, model, device, image_size, patch_size, num_h
     kT = k.permute(0, 2, 1)
 
     # クエリとキーの積を計算してattention matrixを取得
-    attention_matrix = q @ kT # (num_heads, num_patches+1, num_patches+1)
+    # attention_matrix = q @ kT # (num_heads, num_patches+1, num_patches+1)
+    attention_matrix = F.softmax(q @ kT / (q.size(-1) ** 0.5), dim=-1)
 
     # 全てのヘッドでattention matrixを平均化
     attention_matrix_mean = torch.mean(attention_matrix, dim=0) # (num_patches+1, num_patches+1)
+    # attention_matrix_mean = attention_matrix[0,:]
 
     # 残差接続を考慮してattention matrixに単位行列を追加
     residual_att = torch.eye(attention_matrix_mean.size(1)).to(device) # (num_patches+1, num_patches+1)
@@ -42,6 +45,7 @@ def img2attentionscores(img_tensor, model, device, image_size, patch_size, num_h
 
     # クラストークンから各パッチへのアテンションスコアを抽出し，元の画像サイズにリサイズ
     attn_heatmap = aug_att_mat[0, 1:].reshape((int(image_size/patch_size), int(image_size/patch_size)))
+
     attn_heatmap_resized = F.interpolate(attn_heatmap.unsqueeze(0).unsqueeze(0), [image_size, image_size], mode='bilinear').view(image_size, image_size, 1)
 
     return attn_heatmap_resized
