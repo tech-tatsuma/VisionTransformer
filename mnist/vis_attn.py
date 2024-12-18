@@ -38,9 +38,9 @@ def imgpath2heatmap(img_path, model_path, output_path):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     model.load_state_dict(torch.load(model_path))
-    img_tensor = img_tensor.squeeze(0).squeeze(0)
+    img_tensor = img_tensor.squeeze(0)
 
-    heat_map = img2attentionscores(img_tensor, model, device, image_size, patch_size, num_heads, num_patches)
+    heat_map = img2attentionscores(img_tensor.unsqueeze(0), model, device, image_size, patch_size, num_heads, num_patches)
 
     # Convert image and heatmap to numpy arrays
     img_np = np.asarray(img_tensor.cpu())
@@ -57,7 +57,7 @@ def imgpath2heatmap(img_path, model_path, output_path):
     plt.savefig(output_path)
 
 if __name__=="__main__":
-    image_path = ""
-    model_path = ""
+    image_path = "/home/furuya/VisionTransformer/image copy 3.png"
+    model_path = "/home/furuya/VisionTransformer/mnist_outputs/best.pt"
     output_path = "output.png"
     imgpath2heatmap(image_path, model_path, output_path)
